@@ -5,13 +5,22 @@
 #include <fstream>
 #include <stdexcept>
 
+int dezig(unsigned n) {
+    return (n >> 1) ^ (-(n & 1));
+}
+
 int main(int argc, char** argv)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
     std::vector<std::string> args;
+    bool verbose = false;
     for (int i=1;i<argc;++i)
     {
-        args.push_back(argv[i]);
+        if (strcmp(argv[i], "--verbose") == 0) {
+            verbose = true;
+        } else {
+            args.push_back(argv[i]);
+        }
     }
     
     if (args.empty())
@@ -19,7 +28,6 @@ int main(int argc, char** argv)
         std::clog << "please pass the path to an uncompressed or zlib-compressed protobuf tile\n";
         return -1;
     }
-    bool verbose = std::find(args.begin(), args.end(), "--verbose")!=args.end();
     
     try
     {
@@ -125,6 +133,34 @@ int main(int argc, char** argv)
                           std::cout << geom;
                           if (j<feat.geometry_size()-1) {
                             std::cout << ",";
+                          }
+                     }
+                     std::cout << "\n";
+                     std::cout << "    geometries: ";
+                     int px = 0, py = 0;
+                     for (unsigned j=0;j<feat.geometry_size();++j)
+                     {
+                          uint32_t geom = feat.geometry(j);
+			  uint32_t op = geom & 7;
+			  uint32_t count = geom >> 3;
+                          if (op == 1 || op == 2) {
+			      if (op == 1) {
+			          std::cout << "moveto ";
+			      } else {
+                                  std::cout << "lineto ";
+                              }
+
+                              for (unsigned k = 0; k < count; k++) {
+                                  px += dezig(feat.geometry(j + 1));
+                                  py += dezig(feat.geometry(j + 2));
+                                  j += 2;
+
+                                  std::cout << px << "," << py << " ";
+                              }
+			  } else if ((geom & 3) == 7) {
+			      std::cout << "closepath ";
+			  } else {
+                              std::cout << "?" << op << " ";
                           }
                      }
                      std::cout << "\n";
