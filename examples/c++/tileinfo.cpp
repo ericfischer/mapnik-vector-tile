@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 
                                   std::cout << px << "," << py << " ";
                               }
-			  } else if ((geom & 3) == 7) {
+			  } else if (op == 7) {
 			      std::cout << "closepath ";
 			  } else {
                               std::cout << "?" << op << " ";
